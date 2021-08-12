@@ -14,6 +14,8 @@ namespace QRVisitor.Common
         public string PhoneNumber { get; set; }
         public DateTime VisitDate { get; set; }
         public char Gender { get; set; }
+        
+        public int Person { get; set; }
 
         public Visitor(int idx, string name, string phone, DateTime visitDate, char gender)
         {
@@ -23,10 +25,22 @@ namespace QRVisitor.Common
             VisitDate = visitDate;
             Gender = gender;
         }
+        public Visitor(DateTime visitDate, char gender, int person)
+        {
+            VisitDate = visitDate;
+            Gender = gender;
+            Person = person;
+        }
+        public Visitor(DateTime visitDate, int person)
+        {
+            VisitDate = visitDate;
+            Person = person;
+        }
+
 
         public static string connString = "Data Source=127.0.0.1;Initial Catalog=QrVisitor;Persist Security Info=True;User ID=sa; Password=mssql_p@ssw0rd!";
         
-        public static List<Visitor> GetTotal(string start, string end)
+        public static List<Visitor> GetData(string start, string end)
         {
             List<Visitor> list = new List<Visitor>();
             Visitor result = null;
@@ -35,7 +49,7 @@ namespace QRVisitor.Common
             {
                 if (conn.State == System.Data.ConnectionState.Closed) conn.Open();
 
-                var query = $@" select * from QrVisitor where VisitDate between '{start}' and '{end}'";
+                var query = $@" Select * from QrVisitor where VisitDate between '{start}' and '{end}'";
 
                 SqlCommand cmd = new SqlCommand(query, conn);
                 var tmp = cmd.ExecuteReader();
@@ -53,6 +67,33 @@ namespace QRVisitor.Common
             return list;
         }
 
+        public static List<Visitor> GetTotal(string start, string end)
+        {
+            List<Visitor> list = new List<Visitor>();
+            Visitor result = null;
+
+            using (SqlConnection conn = new SqlConnection(connString))
+            {
+                if (conn.State == System.Data.ConnectionState.Closed) conn.Open();
+
+
+                var query = $@"select convert(varchar(10),VisitDate,120) as VisitDate,COUNT(VisitDate) as Person
+                                  from QrVisitor
+                                  where VisitDate
+                                  between '{start}' and '{end}'
+                                  group by convert(varchar(10),VisitDate,120) ";
+
+                SqlCommand cmd = new SqlCommand(query, conn);
+                var tmp = cmd.ExecuteReader();
+                while (tmp.Read())
+                {
+                    result = new Common.Visitor(Convert.ToDateTime(tmp["VisitDate"]),
+                                                Convert.ToInt32(tmp["Person"]));
+                    list.Add(result);
+                }
+            }
+            return list;
+        }
         public static List<Visitor> GetMale(string start, string end)
         {
             List<Visitor> list = new List<Visitor>();
@@ -62,19 +103,20 @@ namespace QRVisitor.Common
             {
                 if (conn.State == System.Data.ConnectionState.Closed) conn.Open();
 
-                var query = $@" select CONVERT(date,VisitDate) as '날짜',Gender,COUNT(VisitDate) as '방문수'
-                                    from QrVisitor group by CONVERT(date,VisitDate),Gender 
-                                    having CONVERT(date,VisitDate) between '{start}' and '{end}' and Gender = 'M'";
+
+                var query = $@"select convert(varchar(10),VisitDate,120) as VisitDate,Gender,COUNT(Gender) as Person
+                                  from QrVisitor
+                                  where VisitDate
+                                  between '{start}' and '{end}'
+                                  group by convert(varchar(10),VisitDate,120),Gender having Gender ='M' ";
 
                 SqlCommand cmd = new SqlCommand(query, conn);
                 var tmp = cmd.ExecuteReader();
                 while (tmp.Read())
                 {
-                    result = new Common.Visitor(Convert.ToInt32(tmp["Idx"]),
-                                                tmp["Name"].ToString(),
-                                                tmp["PhoneNumber"].ToString(),
-                                                Convert.ToDateTime(tmp["VisitDate"]),
-                                                Convert.ToChar(tmp["Gender"]));
+                    result = new Common.Visitor(Convert.ToDateTime(tmp["VisitDate"]),
+                                                Convert.ToChar(tmp["Gender"]),
+                                                Convert.ToInt32(tmp["Person"]));
                     list.Add(result);
                 }
             }
@@ -90,19 +132,19 @@ namespace QRVisitor.Common
             {
                 if (conn.State == System.Data.ConnectionState.Closed) conn.Open();
 
-                var query = $@" select CONVERT(date,VisitDate) as '날짜',Gender,COUNT(VisitDate) as '방문수'
-                                    from QrVisitor group by CONVERT(date,VisitDate),Gender 
-                                    having CONVERT(date,VisitDate) between '{start}' and '{end}' and Gender = 'F'";
+                var query = $@"select convert(varchar(10),VisitDate,120) as VisitDate,Gender,COUNT(Gender) as Person
+                                  from QrVisitor
+                                  where VisitDate
+                                  between '{start}' and '{end}'
+                                  group by convert(varchar(10),VisitDate,120),Gender having Gender ='F' ";
 
                 SqlCommand cmd = new SqlCommand(query, conn);
                 var tmp = cmd.ExecuteReader();
                 while (tmp.Read())
                 {
-                    result = new Common.Visitor(Convert.ToInt32(tmp["Idx"]),
-                                                tmp["Name"].ToString(),
-                                                tmp["PhoneNumber"].ToString(),
-                                                Convert.ToDateTime(tmp["VisitDate"]),
-                                                Convert.ToChar(tmp["Gender"]));
+                    result = new Common.Visitor(Convert.ToDateTime(tmp["VisitDate"]),
+                                                Convert.ToChar(tmp["Gender"]),
+                                                Convert.ToInt32(tmp["Person"]));
                     list.Add(result);
                 }
             }

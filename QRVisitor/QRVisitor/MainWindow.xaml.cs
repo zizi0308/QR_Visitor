@@ -41,54 +41,70 @@ namespace QRVisitor
 
         private void BtnSearch_Click(object sender, RoutedEventArgs e)
         {
+            totalVisit = totalM = totalF = 0;
+
             // 유효성 검사
             if (isValid())
             {
                 var startDate = ((DateTime)DtpStartDate.SelectedDateTime - ts).ToString("yyyy-MM-dd hh:mm:ss"); //시작일
                 var endDate = ((DateTime)DtpEndDate.SelectedDateTime - ts).ToString("yyyy-MM-dd hh:mm:ss"); //종료일
-                var total = Common.Visitor.GetTotal(startDate, endDate);
+                var data = Common.Visitor.GetData(startDate, endDate);
                 var male = Common.Visitor.GetMale(startDate, endDate);
                 var female = Common.Visitor.GetFemale(startDate, endDate);
+                var total = Common.Visitor.GetTotal(startDate, endDate);
 
-                totalVisit = total.Count();
-                totalM = male.Count();
-                totalF = female.Count();
-                DataContext = total;
-                DisplayChart(total);
+                totalVisit = data.Count();
+                totalM = data.Where(a => a.Gender.Equals('M')).Count();
+                totalF = data.Where(a => a.Gender.Equals('F')).Count();
+                DataContext = data;
+
+                DisplayChart(total,male,female);
             }
             lbltotal.Content = $"총 방문객 수 : {totalVisit} 명 \n남자 : {totalM} 명 | 여자 : {totalF} 명";
-            totalVisit = totalM = totalF = 0;
+            
         }
 
-        public void DisplayChart(List<Common.Visitor> list)
+        public void DisplayChart(List<Common.Visitor> total, List<Common.Visitor> male,List<Common.Visitor> female)
         {
+            string[] dates = total.Select(a => a.VisitDate.ToString("yy-MM-dd")).ToArray();
+            int[] totals = total.Select(a => (int)a.Person).ToArray();
+            int[] males = male.Select(a => (int)a.Person).ToArray();
+            int[] females = female.Select(a => (int)a.Person).ToArray();
+            
             //범례 위치 설정
             chart.LegendLocation = LiveCharts.LegendLocation.Top;
 
+            chart.AxisX.Clear();
+            chart.AxisY.Clear();
+
             //세로 눈금 값 설정
-            chart.AxisY.Add(new LiveCharts.Wpf.Axis { MinValue = 0, MaxValue = 10 });
+            chart.AxisY.Add(new LiveCharts.Wpf.Axis { MinValue = 0, MaxValue = 5 });
 
             //가로 눈금 값 설정
-            //chart.AxisX.Add(new LiveCharts.Wpf.Axis { Labels = new string[] { "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12" } });
-            //chart.AxisX.First().Labels = list.Select(a => a.VisitDate.ToString("yy-MM-dd")).ToList();
-            chart.AxisX.Add(new LiveCharts.Wpf.Axis { Labels = list.Select(a => a.VisitDate.ToString("yy-MM-dd")).ToList() });
+            chart.AxisX.Add(new LiveCharts.Wpf.Axis { Labels = dates });
 
             //모든 항목 지우기
             chart.Series.Clear();
 
-            //항목 추가
             chart.Series.Add(new LiveCharts.Wpf.LineSeries()
+            {
+                Title = "총합",
+                Stroke = new SolidColorBrush(Colors.Green),
+                Values = new LiveCharts.ChartValues<int>(totals)
+            });
+            //항목 추가
+            /*chart.Series.Add(new LiveCharts.Wpf.LineSeries()
             {
                 Title = "남자",
                 Stroke = new SolidColorBrush(Colors.Blue),
-                Values = new LiveCharts.ChartValues<double>(new List<double> { 7, 2, 3, 4, 5, 600, 700, 800, 900, 90, 211, 220 })
+                Values = new LiveCharts.ChartValues<int>(males)
             });
             chart.Series.Add(new LiveCharts.Wpf.LineSeries()
             {
                 Title = "여자",
                 Stroke = new SolidColorBrush(Colors.Red),
-                Values = new LiveCharts.ChartValues<double>(new List<double> { 7, 2, 1, 140, 50, 60, 70, 80, 90, 100, 111, 120 })
-            });
+                Values = new LiveCharts.ChartValues<int>(females)
+            });*/
         }
 
         private bool isValid()

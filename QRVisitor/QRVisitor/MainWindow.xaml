@@ -22,7 +22,7 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <TextBlock Grid.Row="0" Grid.Column="1"
-                   Text="방문자록" 
+                   Text="방문록" 
                    FontSize="30" FontWeight="Bold" FontFamily="NanumGothic" Foreground="HotPink"/>
         <Grid Grid.Row="1" Grid.Column="1">
             <Grid.RowDefinitions>
