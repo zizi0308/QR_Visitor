@@ -3,11 +3,35 @@ import cv2
 import datetime
 from PIL import ImageFont, ImageDraw, Image
 import numpy as np		        # 행렬이나 배열을 수식처리하기위한 라이브러리
+from typing import OrderedDict
+import paho.mqtt.client as mqtt
+import json
+
+dev_id = 'QR_Reader'
+broker_address = '210.119.12.50'    #본인 주소넣기
+pub_topic = 'QR_Reader/data/'
+
+client2 = mqtt.Client(dev_id)
+client2.connect(broker_address)
+# print('MQTT Client Connected')  # 이 메세지가 찍혀야 접속되는 것
 
 cap = cv2.VideoCapture(0)		# 웹캠 열기
 # PK조 Fighting!!
 #hashVal = 'D67C69FFACCF947DBEAD024F8FF722D0'
 font = ImageFont.truetype('./fonts/NanumGothicBold.ttf', 20) # 글꼴파일을 불러옴
+
+def send_data(name, phonenumber, gender):
+    visitdate = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+    #json data gen
+    raw_data = OrderedDict()    
+    raw_data['Name'] = name
+    raw_data['PhoneNumber'] = phonenumber
+    raw_data['Gender'] = gender
+    raw_data['VisitDate'] = visitdate
+    pub_data = json.dumps(raw_data, ensure_ascii=False, indent='\t')
+    print(pub_data)
+    #mqtt_publish
+    client2.publish(pub_topic, pub_data)
 
 i = 0
 while (cap.isOpened()):         # 웹캠이 실행되는 동안
@@ -47,14 +71,19 @@ while (cap.isOpened()):         # 웹캠이 실행되는 동안
         # cv2.putText(img, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
         #             1, (0, 255, 255), 2, cv2.LINE_AA)
 
-    cv2.imshow('QrReader', img)  # 로드한 영상을 창에 띄움
+    cv2.imshow('QR_Reader', img)  # 로드한 영상을 창에 띄움
 
     key = cv2.waitKey(1)
     if key == ord('q'): # q 입력시 종료
         break
     elif key == ord('s'):   # s 입력시 저장
-        print("{}".format(qrcode_data),filedt) # 이미지 저장 설정
+        print("{}".format(qrcode_data)) # 이미지 저장 설정
         cv2.imwrite('D:\\QR_{0}.jpg'.format(filedt), img)  
+
+        info = qrcode_data.split("|")
+        send_data(info[0],info[1],info[2])
+
+        
 
 cap.release()   # 웹캠 해제
 cv2.destroyAllWindows() # 화면에 나타난 윈도우 종료(메모리 해제)
