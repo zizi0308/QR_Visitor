@@ -3,35 +3,34 @@ import cv2
 import datetime
 from PIL import ImageFont, ImageDraw, Image
 import numpy as np		        # 행렬이나 배열을 수식처리하기위한 라이브러리
-from typing import OrderedDict
-import paho.mqtt.client as mqtt
-import json
+from typing import OrderedDict  # 순서가 지정된 딕셔너리
+import paho.mqtt.client as mqtt # 데이터 전송을 위한 프로토콜
+import json                     # 데이터 전송 타입
 
 dev_id = 'QR_Reader'
-broker_address = '210.112.19.50'    #본인 주소넣기
+broker_address = '210.112.19.50'    # 본인 주소넣기
 pub_topic = 'QR_Reader/data/'
 
 client2 = mqtt.Client(dev_id)
 client2.connect(broker_address)
-# print('MQTT Client Connected')  # 이 메세지가 찍혀야 접속되는 것
 
 cap = cv2.VideoCapture(0)		# 웹캠 열기
 # PK조 Fighting!!
 #hashVal = 'D67C69FFACCF947DBEAD024F8FF722D0'
 font = ImageFont.truetype('./fonts/NanumGothicBold.ttf', 20) # 글꼴파일을 불러옴
 
-def send_data(name, phonenumber, gender):
+def send_data(name, phonenumber, gender):   # 윈도우에서 데이터를 받기 위한 함수설정
     visitdate = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
     #json data gen
-    raw_data = OrderedDict()    
-    raw_data['Name'] = name
-    raw_data['PhoneNumber'] = phonenumber
-    raw_data['Gender'] = gender
+    raw_data = OrderedDict()                # 순서지정 딕셔너리로 생성자 호출
+    raw_data['Name'] = name                 # info[0]
+    raw_data['PhoneNumber'] = phonenumber   # info[1]
+    raw_data['Gender'] = gender             # info[2]
     raw_data['VisitDate'] = visitdate
-    pub_data = json.dumps(raw_data, ensure_ascii=False, indent='\t')
+    pub_data = json.dumps(raw_data, ensure_ascii=False, indent='\t') # 데이터 발행 설정   
     print(pub_data)
     #mqtt_publish
-    client2.publish(pub_topic, pub_data)
+    client2.publish(pub_topic, pub_data)    # 토픽설정 후 발행(브로커와 연결된 후 실행되야함)
 
 i = 0
 while (cap.isOpened()):         # 웹캠이 실행되는 동안
@@ -76,12 +75,13 @@ while (cap.isOpened()):         # 웹캠이 실행되는 동안
     key = cv2.waitKey(1)
     if key == ord('q'): # q 입력시 종료
         break
+    # 저장이 실행되면 mqtt를 통해 데이터를 전송시킴
     elif key == ord('s'):   # s 입력시 저장
         print("{}".format(qrcode_data)) # 이미지 저장 설정
         cv2.imwrite('D:\\QR_{0}.jpg'.format(filedt), img)  
 
-        info = qrcode_data.split("|")
-        send_data(info[0],info[1],info[2])
+        info = qrcode_data.split("|")       # 데이터 핸들링을 위한 처리('|'기준으로 쪼갬)
+        send_data(info[0],info[1],info[2])  # 배열을 통해 데이터별로 분리
 
         
 
