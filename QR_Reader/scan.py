@@ -8,7 +8,7 @@ import paho.mqtt.client as mqtt
 import json
 
 dev_id = 'QR_Reader'
-broker_address = '210.119.12.50'    #본인 주소넣기
+broker_address = '210.112.19.50'    #본인 주소넣기
 pub_topic = 'QR_Reader/data/'
 
 client2 = mqtt.Client(dev_id)
