@@ -13,6 +13,7 @@ using System.Net;
 using System.Text;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
 
@@ -52,6 +53,7 @@ namespace QRVisitor
             client.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
             client.Connect("Monitor");
             client.Subscribe(new string[] { "QR_Reader/data/" }, new byte[] { MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE });
+            MessageBox.Show("접속완료");
         }
 
         Dictionary<string, string> currentData = new Dictionary<string, string>();
@@ -82,27 +84,31 @@ namespace QRVisitor
             if (isValid())
             {
                 LoadData();
+                
             }
         }
 
         private void LoadData()
         {
+            Dispatcher.Invoke(DispatcherPriority.Normal, new Action(delegate // 스레드 문제가 생길 경우에는 이 코드를 써주면 됨
+            {
+                var startDate = ((DateTime)DtpStartDate.SelectedDateTime - ts).ToString("yyyy-MM-dd hh:mm:ss"); //시작일
+                var endDate = ((DateTime)DtpEndDate.SelectedDateTime - ts).ToString("yyyy-MM-dd hh:mm:ss"); //종료일
+                var data = Common.Visitor.GetData(startDate, endDate);
+                var male = Common.Visitor.GetMale(startDate, endDate);
+                var female = Common.Visitor.GetFemale(startDate, endDate);
+                var total = Common.Visitor.GetTotal(startDate, endDate);
 
-            var startDate = ((DateTime)DtpStartDate.SelectedDateTime - ts).ToString("yyyy-MM-dd hh:mm:ss"); //시작일
-            var endDate = ((DateTime)DtpEndDate.SelectedDateTime - ts).ToString("yyyy-MM-dd hh:mm:ss"); //종료일
-            var data = Common.Visitor.GetData(startDate, endDate);
-            var male = Common.Visitor.GetMale(startDate, endDate);
-            var female = Common.Visitor.GetFemale(startDate, endDate);
-            var total = Common.Visitor.GetTotal(startDate, endDate);
+                totalVisit = data.Count();
+                totalM = data.Where(a => a.Gender.Equals('M')).Count();
+                totalF = data.Where(a => a.Gender.Equals('F')).Count();
+                DataContext = data;
 
-            totalVisit = data.Count();
-            totalM = data.Where(a => a.Gender.Equals('M')).Count();
-            totalF = data.Where(a => a.Gender.Equals('F')).Count();
-            DataContext = data;
+                DisplayChart(total, male, female);
 
-            DisplayChart(total, male, female);
-
-            lbltotal.Content = $"총 방문객 수 : {totalVisit} 명 \n남자 : {totalM} 명 | 여자 : {totalF} 명";
+                lbltotal.Content = $"총 방문객 수 : {totalVisit} 명 \n남자 : {totalM} 명 | 여자 : {totalF} 명";
+            }));
+           
         }
 
         public void DisplayChart(List<Common.Visitor> total, List<Common.Visitor> male, List<Common.Visitor> female)
@@ -165,6 +171,11 @@ namespace QRVisitor
             }
             // 해당되는게 없으면 참 반환
             return result;
+        }
+
+        private void MetroWindow_Unloaded(object sender, RoutedEventArgs e)
+        {
+            client.Disconnect();
         }
     }
 }

@@ -9,7 +9,7 @@
         xmlns:local="clr-namespace:QRVisitor"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="1000" Background="White"
-        Loaded="MetroWindow_Loaded">
+        Loaded="MetroWindow_Loaded" Unloaded="MetroWindow_Unloaded">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="40"/>
