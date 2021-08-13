@@ -3,13 +3,18 @@ using LiveCharts.Defaults;
 using LiveCharts.Wpf;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Net;
+using System.Text;
 using System.Windows;
 using System.Windows.Media;
+using uPLibrary.Networking.M2Mqtt;
+using uPLibrary.Networking.M2Mqtt.Messages;
 
 namespace QRVisitor
 {
@@ -21,9 +26,10 @@ namespace QRVisitor
         public MainWindow()
         {
             InitializeComponent();
+            InitConnectMqttBroker();
         }
 
-        
+        MqttClient client;
         public TimeSpan ts = new TimeSpan(0, 0, 1);
         public int totalVisit; // 전체 방문자 수
         public int totalM; // 전체 남자 수
@@ -39,38 +45,73 @@ namespace QRVisitor
             BtnSearch_Click(sender, e);
         }
 
+        private void InitConnectMqttBroker()
+        {
+            var brokerAddress = IPAddress.Parse("210.119.12.94");
+            client = new MqttClient(brokerAddress);
+            client.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
+            client.Connect("Monitor");
+            client.Subscribe(new string[] { "QR_Reader/data/" }, new byte[] { MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE });
+        }
+
+        Dictionary<string, string> currentData = new Dictionary<string, string>();
+
+        private void Client_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
+        {
+            var message = Encoding.UTF8.GetString(e.Message);
+            currentData = JsonConvert.DeserializeObject<Dictionary<string, string>>(message);
+            UpdateData(currentData);
+        }
+
+        private void UpdateData(Dictionary<string, string> currentData)
+        {
+            Common.Visitor visitor = new Common.Visitor(
+                currentData["Name"].ToString(),
+                currentData["PhoneNumber"].ToString(),
+                Convert.ToChar(currentData["Gender"]),
+                Convert.ToDateTime(currentData["VisitDate"])
+                );
+            Common.Visitor.UpdateData(visitor);
+            LoadData();
+        }
+
         private void BtnSearch_Click(object sender, RoutedEventArgs e)
         {
             totalVisit = totalM = totalF = 0;
-
             // 유효성 검사
             if (isValid())
             {
-                var startDate = ((DateTime)DtpStartDate.SelectedDateTime - ts).ToString("yyyy-MM-dd hh:mm:ss"); //시작일
-                var endDate = ((DateTime)DtpEndDate.SelectedDateTime - ts).ToString("yyyy-MM-dd hh:mm:ss"); //종료일
-                var data = Common.Visitor.GetData(startDate, endDate);
-                var male = Common.Visitor.GetMale(startDate, endDate);
-                var female = Common.Visitor.GetFemale(startDate, endDate);
-                var total = Common.Visitor.GetTotal(startDate, endDate);
-
-                totalVisit = data.Count();
-                totalM = data.Where(a => a.Gender.Equals('M')).Count();
-                totalF = data.Where(a => a.Gender.Equals('F')).Count();
-                DataContext = data;
-
-                DisplayChart(total,male,female);
+                LoadData();
             }
-            lbltotal.Content = $"총 방문객 수 : {totalVisit} 명 \n남자 : {totalM} 명 | 여자 : {totalF} 명";
-            
         }
 
-        public void DisplayChart(List<Common.Visitor> total, List<Common.Visitor> male,List<Common.Visitor> female)
+        private void LoadData()
+        {
+
+            var startDate = ((DateTime)DtpStartDate.SelectedDateTime - ts).ToString("yyyy-MM-dd hh:mm:ss"); //시작일
+            var endDate = ((DateTime)DtpEndDate.SelectedDateTime - ts).ToString("yyyy-MM-dd hh:mm:ss"); //종료일
+            var data = Common.Visitor.GetData(startDate, endDate);
+            var male = Common.Visitor.GetMale(startDate, endDate);
+            var female = Common.Visitor.GetFemale(startDate, endDate);
+            var total = Common.Visitor.GetTotal(startDate, endDate);
+
+            totalVisit = data.Count();
+            totalM = data.Where(a => a.Gender.Equals('M')).Count();
+            totalF = data.Where(a => a.Gender.Equals('F')).Count();
+            DataContext = data;
+
+            DisplayChart(total, male, female);
+
+            lbltotal.Content = $"총 방문객 수 : {totalVisit} 명 \n남자 : {totalM} 명 | 여자 : {totalF} 명";
+        }
+
+        public void DisplayChart(List<Common.Visitor> total, List<Common.Visitor> male, List<Common.Visitor> female)
         {
             string[] dates = total.Select(a => a.VisitDate.ToString("yy-MM-dd")).ToArray();
             int[] totals = total.Select(a => (int)a.Person).ToArray();
             int[] males = male.Select(a => (int)a.Person).ToArray();
             int[] females = female.Select(a => (int)a.Person).ToArray();
-            
+
             //범례 위치 설정
             chart.LegendLocation = LiveCharts.LegendLocation.Top;
 
