@@ -14,12 +14,19 @@ namespace QRVisitor.Common
         public string PhoneNumber { get; set; }
         public DateTime VisitDate { get; set; }
         public char Gender { get; set; }
-        
+
         public int Person { get; set; }
 
         public Visitor(int idx, string name, string phone, DateTime visitDate, char gender)
         {
             Idx = idx;
+            Name = name;
+            PhoneNumber = phone;
+            VisitDate = visitDate;
+            Gender = gender;
+        }
+        public Visitor(string name, string phone, char gender, DateTime visitDate)
+        {
             Name = name;
             PhoneNumber = phone;
             VisitDate = visitDate;
@@ -39,7 +46,34 @@ namespace QRVisitor.Common
 
 
         public static string connString = "Data Source=127.0.0.1;Initial Catalog=QrVisitor;Persist Security Info=True;User ID=sa; Password=mssql_p@ssw0rd!";
-        
+
+        public static void UpdateData(Visitor visitor)
+        {
+            List<Visitor> list = new List<Visitor>();
+            Visitor result = null;
+            //DB연결
+            using (SqlConnection conn = new SqlConnection(connString))
+            {
+                if (conn.State == System.Data.ConnectionState.Closed) conn.Open();
+
+                var query = $@"INSERT INTO dbo.QRVisitor
+                                            (Name
+                                            ,PhoneNumber
+                                            ,VisitDate
+                                            ,Gender)
+                                        VALUES
+                                            ('{visitor.Name}'
+                                            ,'{visitor.PhoneNumber}'
+                                            ,'{visitor.VisitDate.ToString("yyyy-MM-dd HH:mm:ss")}'
+                                            ,'{visitor.Gender}')";
+
+                SqlCommand cmd = new SqlCommand(query, conn);
+                var tmp = cmd.ExecuteReader();
+                //쿼리 실행
+                tmp.Read();
+            }
+        }
+
         public static List<Visitor> GetData(string start, string end)
         {
             List<Visitor> list = new List<Visitor>();
