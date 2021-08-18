@@ -45,7 +45,7 @@ namespace QRVisitor.Common
         }
 
 
-        public static string connString = "Data Source=127.0.0.1;Initial Catalog=QrVisitor;Persist Security Info=True;User ID=sa; Password=mssql_p@ssw0rd!";
+        public static string connString = "Data Source=127.0.0.1;Initial Catalog=QrVisitor;Persist Security Info=True;User ID=sa; Password=msspl_p@ssw0rd!";
 
         public static void UpdateData(Visitor visitor)
         {

@@ -48,7 +48,7 @@ namespace QRVisitor
 
         private void InitConnectMqttBroker()
         {
-            var brokerAddress = IPAddress.Parse("210.119.12.94");
+            var brokerAddress = IPAddress.Parse("210.119.12.50");
             client = new MqttClient(brokerAddress);
             client.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
             client.Connect("Monitor");
@@ -125,7 +125,7 @@ namespace QRVisitor
             chart.AxisY.Clear();
 
             //세로 눈금 값 설정
-            chart.AxisY.Add(new LiveCharts.Wpf.Axis { MinValue = 0, MaxValue = 5 });
+            chart.AxisY.Add(new LiveCharts.Wpf.Axis { MinValue = 0, MaxValue = 10 });
 
             //가로 눈금 값 설정
             chart.AxisX.Add(new LiveCharts.Wpf.Axis { Labels = dates });
