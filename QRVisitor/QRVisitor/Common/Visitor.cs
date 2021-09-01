@@ -14,7 +14,6 @@ namespace QRVisitor.Common
         public string PhoneNumber { get; set; }
         public DateTime VisitDate { get; set; }
         public char Gender { get; set; }
-
         public int Person { get; set; }
 
         public Visitor(int idx, string name, string phone, DateTime visitDate, char gender)
@@ -47,7 +46,7 @@ namespace QRVisitor.Common
 
         public static string connString = "Data Source=127.0.0.1;Initial Catalog=QrVisitor;Persist Security Info=True;User ID=sa; Password=msspl_p@ssw0rd!";
 
-        public static void UpdateData(Visitor visitor)
+        public static void UpdateDBData(Visitor visitor) 
         {
             List<Visitor> list = new List<Visitor>();
             Visitor result = null;
